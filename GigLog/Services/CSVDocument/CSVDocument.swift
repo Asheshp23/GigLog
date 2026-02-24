@@ -9,7 +9,7 @@ struct CSVDocument: FileDocument {
   var text: String
   
   // 2. Initialize with default text (The CSV Headers)
-  init(initialText: String = "Date,Type,Details,Start_Odo,End_Odo,Total,Cost\n") {
+  init(initialText: String = LogEntry.csvHeader + "\n") {
     self.text = initialText
   }
   
