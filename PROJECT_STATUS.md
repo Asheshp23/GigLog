@@ -1,7 +1,7 @@
 # GigLog Project Status
 
 ## Updated
-- 2026-02-23
+- 2026-03-02
 
 ## Completed
 - Bootstrapped iOS SwiftUI project and app entrypoint.
@@ -34,6 +34,11 @@
   - Added animated section transitions and mileage step indicators.
   - Added pending-shift banner with quick jump to end-step flow.
   - Improved recent-entry list readability with icons and metadata emphasis.
+- Completed full app UI consistency pass:
+  - Unified gradients, cards, spacing, and typography across onboarding and workspace.
+  - Refined dashboard structure with clearer action hierarchy and totals card.
+  - Preserved step-based mileage flow and preferences while removing unstable experimental chart/earnings UI paths.
+  - Restored strict CSV schema compatibility (`Date,Type,Details,Start_Odo,End_Odo,Total,Cost`).
 
 ## In Progress
 - End-to-end validation on simulator/device (manual QA).

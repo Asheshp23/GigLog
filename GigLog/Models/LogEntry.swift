@@ -76,7 +76,7 @@ struct LogEntry: Identifiable {
     self.cost = Self.parseDouble(columns[6])
   }
 
-  private static func escapeCSV(_ value: String) -> String {
+  private nonisolated static func escapeCSV(_ value: String) -> String {
     if value.contains(",") || value.contains("\"") || value.contains("\n") {
       return "\"\(value.replacingOccurrences(of: "\"", with: "\"\""))\""
     }
@@ -84,20 +84,18 @@ struct LogEntry: Identifiable {
     return value
   }
 
-  private static func format(_ value: Double?) -> String {
+  private nonisolated static func format(_ value: Double?) -> String {
     guard let value else { return "" }
-
-    // Keep values concise while preserving precision for fractional mileage.
     return String(format: "%.2f", value)
   }
 
-  private static func parseDouble(_ value: String) -> Double? {
+  private nonisolated static func parseDouble(_ value: String) -> Double? {
     let trimmed = value.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !trimmed.isEmpty else { return nil }
     return Double(trimmed)
   }
 
-  private static func parseCSVLine(_ line: String) -> [String] {
+  private nonisolated static func parseCSVLine(_ line: String) -> [String] {
     var columns: [String] = []
     var current = ""
     var inQuotes = false

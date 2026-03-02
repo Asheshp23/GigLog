@@ -7,25 +7,34 @@ struct StorageSetupView: View {
   @State private var viewModel = StorageSetupVM()
 
   var body: some View {
-    VStack(spacing: 24) {
-      header
+    ZStack {
+      LinearGradient(
+        colors: [Color(.systemGroupedBackground), Color(.secondarySystemGroupedBackground)],
+        startPoint: .top,
+        endPoint: .bottom
+      )
+      .ignoresSafeArea()
 
-      if let url = storage.fileURL {
-        LogWorkspaceView(filename: url.lastPathComponent)
-      } else {
-        EmptyStateView {
-          viewModel.showExporter = true
+      VStack(spacing: 24) {
+        header
+
+        if let url = storage.fileURL {
+          LogWorkspaceView(filename: url.lastPathComponent)
+        } else {
+          EmptyStateView {
+            viewModel.showExporter = true
+          }
+        }
+
+        if let error = storage.errorMessage {
+          Text(error)
+            .font(.caption)
+            .foregroundStyle(.red)
+            .padding(.horizontal)
         }
       }
-
-      if let error = storage.errorMessage {
-        Text(error)
-          .font(.caption)
-          .foregroundStyle(.red)
-          .padding(.horizontal)
-      }
+      .padding(.top, 8)
     }
-    .padding(.top, 8)
     .fileExporter(
       isPresented: $viewModel.showExporter,
       document: viewModel.document,

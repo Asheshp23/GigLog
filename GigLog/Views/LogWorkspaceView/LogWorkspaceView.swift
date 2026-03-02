@@ -30,23 +30,14 @@ struct LogWorkspaceView: View {
   var body: some View {
     ScrollView {
       VStack(alignment: .leading, spacing: 20) {
-        header
-        quickActions
+        heroHeader
+        dashboardCards
 
         if let draft = storage.pendingTripDraft {
-          pendingShiftBanner(draft: draft)
+          activeShiftBanner(draft: draft)
         }
 
-        switch section {
-        case .dashboard:
-          EmptyView()
-        case .mileage:
-          mileageSection
-            .transition(.move(edge: .bottom).combined(with: .opacity))
-        case .expense:
-          expenseSection
-            .transition(.move(edge: .bottom).combined(with: .opacity))
-        }
+        contentSection
 
         if let error = formVM.errorMessage {
           Text(error)
@@ -59,7 +50,13 @@ struct LogWorkspaceView: View {
       }
       .padding(20)
     }
-    .background(Color(.systemGroupedBackground))
+    .background(
+      LinearGradient(
+        colors: [Color(.systemGroupedBackground), Color(.secondarySystemGroupedBackground)],
+        startPoint: .top,
+        endPoint: .bottom
+      )
+    )
     .onAppear(perform: loadEntries)
     .animation(.snappy(duration: 0.25), value: section)
     .sheet(isPresented: $showPreferences) {
@@ -67,15 +64,15 @@ struct LogWorkspaceView: View {
     }
   }
 
-  private var header: some View {
+  private var heroHeader: some View {
     VStack(alignment: .leading, spacing: 12) {
       HStack {
         VStack(alignment: .leading, spacing: 4) {
           Text("GigLog")
             .font(.system(.title2, design: .rounded, weight: .bold))
-          Text("Shift-ready trip and expense tracker")
+          Text("Trip and expense tracking, on your file")
             .font(.footnote)
-            .foregroundStyle(.white.opacity(0.9))
+            .foregroundStyle(.white.opacity(0.92))
         }
 
         Spacer()
@@ -86,80 +83,48 @@ struct LogWorkspaceView: View {
           Image(systemName: "slider.horizontal.3")
             .font(.headline)
             .frame(width: 40, height: 40)
-            .background(.white.opacity(0.24), in: Circle())
+            .background(.white.opacity(0.22), in: Circle())
         }
         .buttonStyle(.plain)
       }
 
       HStack(spacing: 8) {
-        preferenceChip(icon: "ruler", text: preferredMileageUnit.title)
-        preferenceChip(icon: "dollarsign.circle", text: selectedCurrency.rawValue)
+        preferencePill(icon: "ruler", text: preferredMileageUnit.title)
+        preferencePill(icon: "dollarsign.circle", text: selectedCurrency.rawValue)
       }
 
       Text(filename)
         .font(.caption)
-        .foregroundStyle(.white.opacity(0.9))
+        .foregroundStyle(.white.opacity(0.95))
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
-        .background(.white.opacity(0.2), in: Capsule())
+        .background(.white.opacity(0.18), in: Capsule())
     }
-    .foregroundStyle(.white)
     .padding(16)
     .background(
       LinearGradient(
-        colors: [Color.blue, Color.indigo],
+        colors: [Color(red: 0.07, green: 0.43, blue: 0.95), Color(red: 0.12, green: 0.28, blue: 0.75)],
         startPoint: .topLeading,
         endPoint: .bottomTrailing
       )
     )
-    .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-    .shadow(color: .blue.opacity(0.18), radius: 14, y: 10)
+    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+    .shadow(color: .blue.opacity(0.16), radius: 14, y: 10)
   }
 
-  private func preferenceChip(icon: String, text: String) -> some View {
+  private func preferencePill(icon: String, text: String) -> some View {
     HStack(spacing: 6) {
       Image(systemName: icon)
       Text(text)
     }
     .font(.caption)
+    .foregroundStyle(.white)
     .padding(.horizontal, 10)
     .padding(.vertical, 5)
-    .background(.white.opacity(0.2), in: Capsule())
+    .background(.white.opacity(0.16), in: Capsule())
   }
 
-  private var preferencesSheet: some View {
-    NavigationStack {
-      Form {
-        Section("Mileage Unit") {
-          Picker("Unit", selection: $preferredMileageUnitRaw) {
-            ForEach(MileageUnit.allCases) { unit in
-              Text(unit.title).tag(unit.rawValue)
-            }
-          }
-          .pickerStyle(.inline)
-        }
-
-        Section("Currency") {
-          Picker("Currency", selection: $preferredCurrencyCode) {
-            ForEach(CurrencyOption.allCases) { currency in
-              Text(currency.title).tag(currency.rawValue)
-            }
-          }
-          .pickerStyle(.inline)
-        }
-      }
-      .navigationTitle("Preferences")
-      .toolbar {
-        ToolbarItem(placement: .topBarTrailing) {
-          Button("Done") {
-            showPreferences = false
-          }
-        }
-      }
-    }
-  }
-
-  private var quickActions: some View {
+  private var dashboardCards: some View {
     VStack(alignment: .leading, spacing: 12) {
       Text("Quick Actions")
         .font(.title3)
@@ -170,42 +135,36 @@ struct LogWorkspaceView: View {
           title: "Mileage",
           subtitle: storage.pendingTripDraft == nil ? "Start shift" : "Finish shift",
           icon: "car.fill",
-          accent: .blue
+          accent: Color.blue
         ) {
           formVM.errorMessage = nil
-          withAnimation { section = .mileage }
+          section = .mileage
         }
 
         actionCard(
           title: "Expense",
-          subtitle: "Fuel, service, wash",
+          subtitle: "Fuel and maintenance",
           icon: "creditcard.fill",
-          accent: .orange
+          accent: Color.orange
         ) {
           formVM.errorMessage = nil
-          withAnimation { section = .expense }
+          section = .expense
         }
       }
 
-      summaryStrip
+      totalsCard
     }
   }
 
-  private func actionCard(
-    title: String,
-    subtitle: String,
-    icon: String,
-    accent: Color,
-    action: @escaping () -> Void
-  ) -> some View {
-    Button(action: action) {
+  private func actionCard(title: String, subtitle: String, icon: String, accent: Color, onTap: @escaping () -> Void) -> some View {
+    Button(action: onTap) {
       VStack(alignment: .leading, spacing: 10) {
         HStack {
           Image(systemName: icon)
             .font(.headline)
             .foregroundStyle(accent)
             .frame(width: 34, height: 34)
-            .background(accent.opacity(0.14), in: Circle())
+            .background(accent.opacity(0.15), in: Circle())
 
           Spacer()
 
@@ -222,14 +181,14 @@ struct LogWorkspaceView: View {
           .font(.caption)
           .foregroundStyle(.secondary)
       }
-      .frame(maxWidth: .infinity, minHeight: 118, alignment: .leading)
+      .frame(maxWidth: .infinity, minHeight: 116, alignment: .leading)
       .padding(14)
       .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
     }
     .buttonStyle(.plain)
   }
 
-  private var summaryStrip: some View {
+  private var totalsCard: some View {
     let mileage = recentEntries.filter { $0.kind == .trip }.compactMap(\.total).reduce(0, +)
     let expense = recentEntries.filter { $0.kind == .expense }.compactMap(\.cost).reduce(0, +)
 
@@ -256,7 +215,7 @@ struct LogWorkspaceView: View {
     .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
   }
 
-  private func pendingShiftBanner(draft: PendingTripDraft) -> some View {
+  private func activeShiftBanner(draft: PendingTripDraft) -> some View {
     HStack(alignment: .top, spacing: 10) {
       Image(systemName: "clock.badge.fill")
         .foregroundStyle(.blue)
@@ -273,8 +232,8 @@ struct LogWorkspaceView: View {
 
       Spacer()
 
-      Button("End") {
-        withAnimation { section = .mileage }
+      Button("Open") {
+        section = .mileage
       }
       .font(.caption.weight(.semibold))
     }
@@ -282,45 +241,61 @@ struct LogWorkspaceView: View {
     .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
   }
 
+  @ViewBuilder
+  private var contentSection: some View {
+    switch section {
+    case .dashboard:
+      EmptyView()
+    case .mileage:
+      mileageSection
+        .transition(.move(edge: .bottom).combined(with: .opacity))
+    case .expense:
+      expenseSection
+        .transition(.move(edge: .bottom).combined(with: .opacity))
+    }
+  }
+
   private var mileageSection: some View {
     VStack(alignment: .leading, spacing: 14) {
-      sectionTitle("Mileage Log")
+      Text("Mileage Log")
+        .font(.title3)
+        .fontWeight(.semibold)
 
       if let draft = storage.pendingTripDraft {
-        mileageStepHeader(currentStep: 2)
-        endMileageStep(draft: draft)
+        stepHeader(activeStep: 2)
+        endMileageCard(draft: draft)
       } else {
-        mileageStepHeader(currentStep: 1)
-        startMileageStep
+        stepHeader(activeStep: 1)
+        startMileageCard
       }
 
       backButton
     }
   }
 
-  private func mileageStepHeader(currentStep: Int) -> some View {
+  private func stepHeader(activeStep: Int) -> some View {
     HStack(spacing: 10) {
-      stepBubble("1", isActive: currentStep == 1)
+      stepDot("1", isActive: activeStep == 1)
       Rectangle()
         .fill(Color.secondary.opacity(0.3))
         .frame(height: 2)
-      stepBubble("2", isActive: currentStep == 2)
+      stepDot("2", isActive: activeStep == 2)
       Spacer()
-      Text(currentStep == 1 ? "Start Shift" : "End Shift")
+      Text(activeStep == 1 ? "Start Shift" : "End Shift")
         .font(.caption)
         .foregroundStyle(.secondary)
     }
   }
 
-  private func stepBubble(_ title: String, isActive: Bool) -> some View {
+  private func stepDot(_ title: String, isActive: Bool) -> some View {
     Text(title)
       .font(.caption.weight(.bold))
       .frame(width: 24, height: 24)
       .foregroundStyle(isActive ? .white : .secondary)
-      .background(isActive ? Color.blue : Color.secondary.opacity(0.15), in: Circle())
+      .background(isActive ? Color.blue : Color.secondary.opacity(0.14), in: Circle())
   }
 
-  private var startMileageStep: some View {
+  private var startMileageCard: some View {
     VStack(alignment: .leading, spacing: 12) {
       DatePicker("Date", selection: $formVM.mileageDate, displayedComponents: .date)
 
@@ -345,10 +320,10 @@ struct LogWorkspaceView: View {
 
       primaryButton(title: "Save Start Odometer", icon: "flag.fill", color: .blue, action: saveStartOdometer)
     }
-    .cardStyle()
+    .infoCardStyle()
   }
 
-  private func endMileageStep(draft: PendingTripDraft) -> some View {
+  private func endMileageCard(draft: PendingTripDraft) -> some View {
     VStack(alignment: .leading, spacing: 12) {
       Text("Started with \(draft.platformName) at \(String(format: "%.2f", draft.startOdometer)) \(preferredMileageUnit.shortLabel)")
         .font(.footnote)
@@ -372,12 +347,14 @@ struct LogWorkspaceView: View {
           .font(.footnote)
       }
     }
-    .cardStyle()
+    .infoCardStyle()
   }
 
   private var expenseSection: some View {
     VStack(alignment: .leading, spacing: 14) {
-      sectionTitle("Expense Log")
+      Text("Expense Log")
+        .font(.title3)
+        .fontWeight(.semibold)
 
       VStack(alignment: .leading, spacing: 12) {
         DatePicker("Date", selection: $formVM.expenseDate, displayedComponents: .date)
@@ -403,7 +380,7 @@ struct LogWorkspaceView: View {
 
         primaryButton(title: "Save Expense", icon: "plus.circle.fill", color: .orange, action: saveExpense)
       }
-      .cardStyle()
+      .infoCardStyle()
 
       backButton
     }
@@ -423,7 +400,7 @@ struct LogWorkspaceView: View {
   private var backButton: some View {
     Button {
       formVM.errorMessage = nil
-      withAnimation { section = .dashboard }
+      section = .dashboard
     } label: {
       Label("Back to Dashboard", systemImage: "arrow.left")
         .font(.footnote)
@@ -483,10 +460,36 @@ struct LogWorkspaceView: View {
     }
   }
 
-  private func sectionTitle(_ text: String) -> some View {
-    Text(text)
-      .font(.title3)
-      .fontWeight(.semibold)
+  private var preferencesSheet: some View {
+    NavigationStack {
+      Form {
+        Section("Mileage Unit") {
+          Picker("Unit", selection: $preferredMileageUnitRaw) {
+            ForEach(MileageUnit.allCases) { unit in
+              Text(unit.title).tag(unit.rawValue)
+            }
+          }
+          .pickerStyle(.inline)
+        }
+
+        Section("Currency") {
+          Picker("Currency", selection: $preferredCurrencyCode) {
+            ForEach(CurrencyOption.allCases) { currency in
+              Text(currency.title).tag(currency.rawValue)
+            }
+          }
+          .pickerStyle(.inline)
+        }
+      }
+      .navigationTitle("Preferences")
+      .toolbar {
+        ToolbarItem(placement: .topBarTrailing) {
+          Button("Done") {
+            showPreferences = false
+          }
+        }
+      }
+    }
   }
 
   private func saveStartOdometer() {
@@ -564,7 +567,7 @@ struct LogWorkspaceView: View {
 }
 
 private extension View {
-  func cardStyle() -> some View {
+  func infoCardStyle() -> some View {
     self
       .padding(14)
       .background(Color(.secondarySystemGroupedBackground), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
