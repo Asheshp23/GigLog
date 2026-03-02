@@ -8,9 +8,14 @@ Unlike other tracking apps, **GigLog does not lock your data inside the app.** I
 
 ## 📱 Features
 
-- **Mileage Tracking:** Log Start and End odometer readings.
-- **Expense Logging:** Track Gas, Maintenance, Car Washes, and Tolls.
+- **Mileage Tracking:** Log Start and End odometer readings and auto-calculate miles.
+- **Step-Based Mileage Flow:** Save Start Odometer first, then complete with End Odometer later.
+- **Rideshare App Tagging:** Label trips as Uber, Lyft, Hopp, or custom app.
+- **Expense Logging:** Track Gas, Oil Change, Tire Change, Maintenance, Accessory, Car Wash, or custom expense types.
+- **Dashboard Navigation:** Choose `Mileage` or `Expense` from a simple logging dashboard.
+- **Flexible Preferences:** Choose mileage unit (Miles/Kilometers) and preferred expense currency.
 - **Persistent Storage:** Data is saved to a `RideshareLog.csv` file in the user's Documents folder.
+- **Recent Activity:** View latest saved entries in-app.
 - **Excel/Sheets Ready:** The output file can be opened immediately in Microsoft Excel or Google Sheets.
 - **Privacy First:** No external servers, no accounts required.
 
